@@ -6,7 +6,6 @@ use crate::data::error::Kind;
 
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
-use ipnetwork::IpNetwork;
 use pnet::datalink;
 use pnet_datalink::NetworkInterface;
 use regex::Regex;
@@ -138,7 +137,7 @@ impl Uid {
 			.map(
 				|network_interface: &NetworkInterface| -> String {
 					return network_interface.ips.iter().map(
-						|ip_network: &IpNetwork| -> IpAddr { ip_network.ip() }
+						|ip_network| -> IpAddr { ip_network.ip() }
 					)
 						.map(
 							|ip_address: IpAddr| -> String {
