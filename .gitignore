@@ -1,0 +1,7 @@
+# Rust folders and files
+/target
+**/*.rs.bk
+Cargo.lock
+
+# IntelliJ folders and files
+/.idea
