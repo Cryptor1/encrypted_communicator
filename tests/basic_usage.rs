@@ -36,7 +36,7 @@ fn test_basic_usage() {
 	match received_data {
 		ProcessedData::Communication(decrypted_data, _) => {
 			assert_eq!(
-				unsafe { String::from_utf8_unchecked(decrypted_data) },
+				String::from_utf8(decrypted_data).unwrap(),
 				data_to_encrypt,
 				"Decrypted data does not match initially encrypted one",
 			);
