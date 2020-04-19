@@ -5,10 +5,16 @@ use crate::data::Uid;
 pub enum ProcessedData {
 	/// Decrypted data which should be further processed by the&nbsp;implementor
 	/// code.
-	Communication(Vec<u8>),
+	/// # Parameters
+	/// * `Uid` &ndash; Unique identifier of `Communicator` which prepared this
+	/// data.
+	Communication(Vec<u8>, Uid),
 	/// Service data which needs to be transmitted back to the&nbsp;sender
 	/// communicator.
-	Service(Vec<u8>),
+	/// # Parameters
+	/// * `Uid` &ndash; Unique identifier of `Communicator` which prepared this
+	/// service data.
+	Service(Vec<u8>, Uid),
 	/// New encrypted communication has been successfully established.
 	///
 	/// `Uid` &#x2013; Unique identifier of another communicator,

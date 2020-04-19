@@ -18,7 +18,7 @@ fn test_basic_usage() {
 		.process_incoming(&connection_request).unwrap();
 
 	match other_communicator_response {
-		ProcessedData::Service(service_data) => {
+		ProcessedData::Service(service_data, _) => {
 			this_communicator.process_incoming(&service_data).unwrap();
 		},
 		err => panic!("Unexpected processed data, `{:?}`, has been encountered", err),
@@ -34,7 +34,7 @@ fn test_basic_usage() {
 		.unwrap();
 
 	match received_data {
-		ProcessedData::Communication(decrypted_data) => {
+		ProcessedData::Communication(decrypted_data, _) => {
 			assert_eq!(
 				unsafe { String::from_utf8_unchecked(decrypted_data) },
 				data_to_encrypt,

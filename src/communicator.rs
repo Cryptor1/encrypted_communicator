@@ -200,7 +200,7 @@ impl Communicator {
 					)
 						.convert_to_bytes()
 						.expect("Unexpected error while converting response to raw bytes");
-					return Ok(ProcessedData::Service(response))
+					return Ok(ProcessedData::Service(response, self.uid().clone()))
 				}
 				else {
 					let response: Vec<u8> = Data::new(
@@ -210,7 +210,7 @@ impl Communicator {
 					)
 						.convert_to_bytes()
 						.expect("Unexpected error while converting response to raw bytes");
-					return Ok(ProcessedData::Service(response))
+					return Ok(ProcessedData::Service(response, self.uid().clone()))
 				}
 			},
 			Operation::Response(response) => {
@@ -263,7 +263,9 @@ impl Communicator {
 					Some(key) => {
 						match key.decrypt(encrypted_data.as_slice()) {
 							Ok(decrypted_data) => {
-								return Ok(ProcessedData::Communication(decrypted_data))
+								let result = ProcessedData::Communication(
+									decrypted_data, data.get_uid().clone());
+								return Ok(result)
 							},
 							Err(_) => return Err(error::new(Kind::DataDecryption)),
 						}
@@ -524,9 +526,15 @@ mod tests {
 			this_communicator.process_incoming(connection_request.as_slice())
 				.expect("Failed to generate establish confirmation response data");
 		match establish_response {
-			ProcessedData::Service(data) => {
+			ProcessedData::Service(data, uid) => {
 				other_communicator.process_incoming(data.as_slice())
 					.expect("Failed to process establish confirmation response data");
+				assert_eq!(
+					*this_communicator.uid.borrow(),
+					uid,
+					"Communicator, which accepted connection and prepared connection-established \
+						response, has to provide own unique identifier along with response",
+				);
 			},
 			other_data => {
 				panic!(
@@ -579,8 +587,15 @@ mod tests {
 			this_communicator.process_incoming(connection_request.as_slice())
 				.expect("Failed to generate already-established response data");
 		match establish_response {
-			ProcessedData::Service(data) => {
+			ProcessedData::Service(data, uid) => {
 				assert!(!data.is_empty(), "Already-established response data is empty");
+				assert_eq!(
+					*this_communicator.uid.borrow(),
+					uid,
+					"Communicator, which accepted connection reestablishing and prepared \
+						corresponding response, has to provide own unique identifier along with \
+						response",
+				);
 			},
 			other_data => {
 				panic!(
@@ -649,12 +664,12 @@ mod tests {
 			this_communicator.process_incoming(connection_request.as_slice())
 				.expect("Failed to properly refuse connection request");
 		match establish_response {
-			ProcessedData::Service(data) => {
+			ProcessedData::Service(data, uid) => {
 				let response_data: Data = Data::from_bytes(data.as_slice())
 					.expect("Failed to deserialize raw bytes into `Data` object");
 				assert_eq!(
-					this_communicator.uid.borrow().deref(),
-					response_data.get_uid(),
+					*this_communicator.uid.borrow(),
+					uid,
 					"Communicator, which refused connection with already-established \
 						reason, has to provide own unique identifier along with \
 						response",
@@ -754,7 +769,7 @@ mod tests {
 
 		let received_response: ProcessedData;
 		match establish_response {
-			ProcessedData::Service(data) => {
+			ProcessedData::Service(data, _) => {
 				received_response = other_communicator.process_incoming(data.as_slice())
 					.expect("Failed to process establish confirmation response data");
 			},
@@ -823,7 +838,7 @@ mod tests {
 			other_communicator_2.process_incoming(connection_request.as_slice())
 				.expect("Failed to prepare response for a connection request");
 		let connection_response: Vec<u8> = match connection_response {
-			ProcessedData::Service(data) => data,
+			ProcessedData::Service(data, _) => data,
 			incorrect_response_data => {
 				panic!(
 					"Incorrect `{:?}` data has been generated as a result of \
@@ -873,7 +888,7 @@ mod tests {
 						response",
 				);
 		let connection_response: Vec<u8> = match connection_response {
-			ProcessedData::Service(response_data) => response_data,
+			ProcessedData::Service(response_data, _) => response_data,
 			incorrect_response_data => {
 				panic!(
 					"Incorrect `{:?}` data has been generated as a result of \
@@ -930,13 +945,19 @@ mod tests {
 			this_communicator.process_incoming(data_to_send.as_slice())
 				.expect("Failed to process received data");
 		match received_data {
-			ProcessedData::Communication(data) => {
+			ProcessedData::Communication(data, uid) => {
 				let received_message: &str =
 					&String::from_utf8_lossy(data.as_slice()).into_owned();
 				assert_eq!(
 					sent_message,
 					received_message,
 					"Sent data was not get properly decrypted",
+				);
+				assert_eq!(
+					*other_communicator.uid.borrow(),
+					uid,
+					"Communicator, which prepared communication data for sending, has to provide \
+						own unique identifier along with encrypted data",
 				);
 			},
 			incorrect_processing_result => {
@@ -1226,10 +1247,16 @@ mod tests {
 			other_communicator.process_incoming(communication_data.as_slice())
 				.expect("Failed to process received data from another communicator");
 		match processed_data {
-			ProcessedData::Communication(data) => {
+			ProcessedData::Communication(data, uid) => {
 				assert!(
 					data.is_empty(),
 					"Received data from another communicator is expected to be empty",
+				);
+				assert_eq!(
+					this_uid,
+					uid,
+					"Communicator, which prepared communication data for sending, has to provide \
+						own unique identifier along with encrypted data",
 				);
 			},
 			incorrectly_processed_data => {
