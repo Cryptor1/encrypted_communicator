@@ -1,11 +1,8 @@
-//! Encryption keys and hashing algorithms.
-//!
-//! Since the&nbsp;crate does&nbsp;not&nbsp;implement custom struct which
-//! represents RSA key, and uses `openssl::rsa::Rsa` from
-//! the&nbsp;[`openssl`][1] crate, the&nbsp;RSA API is defined in
-//! a&nbsp;separated sub&#x2011;crate.
-//!
-//! [1]: https://crates.io/crates/openssl
+//! Gathers conventions in form of `NegotiationKey` and `CommunicationKey`,
+//! which describe encryption keys' properties required by this crate. Also
+//! contains implementations for the&nbsp;mentioned traits, namely:
+//! * `Rsa`, which implements `NegotiationKey`
+//! * `Aes`, which implements `CommunicationKey`
 
 mod aes;
 mod communication_key;
