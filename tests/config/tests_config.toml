@@ -1,0 +1,3 @@
+communicator_port = "8080"
+connections_quantity = "100"
+messages_quantity = "50"
